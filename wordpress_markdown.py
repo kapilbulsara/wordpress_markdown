@@ -12,6 +12,7 @@ tree = ET.parse(xmlFile)
 root = tree.getroot()
 channel = root.find('channel');
 numPosts = 0
+numComments = 0
 for post in channel.findall('item'):
 
     namespace_wp = '{http://wordpress.org/export/1.2/}'
@@ -61,15 +62,42 @@ for post in channel.findall('item'):
         markdownFile.write('\n')
 
         contentHTML = post.find(namespace_content + 'encoded').text
-        if contentHTML is None or len(contentHTML) == 0: 
-            continue
-        else:
+        if contentHTML is not None and len(contentHTML) > 0:
             h = html2text.HTML2Text()
             h.body_width = 0
             contentMarkdown = h.handle(contentHTML)
             markdownFile.write(contentMarkdown)
 
             print ('saved ' + postName + ' in ' + filename)
-            numPosts = numPosts + 1
+
+        commentStart = False
+
+        for comment in post.findall(namespace_wp + 'comment'):
+            if not commentStart:
+                commentStart = True
+                markdownFile.write('\n')
+                markdownFile.write('\n')
+                markdownFile.write('## Comments')
+                markdownFile.write('\n')
+                markdownFile.write('\n')
+            #comment date is not consistent with post dates. If needed I shall make it so
+            comment_date = comment.find(namespace_wp + 'comment_date').text
+            comment_content = comment.find(namespace_wp + 'comment_content').text
+
+            markdownFile.write('Time: ' + comment_date)
+            markdownFile.write('\n')
+            markdownFile.write('\n')
+            
+            markdownFile.write(comment_content)
+            markdownFile.write('\n')
+            markdownFile.write('\n')
+
+            numComments = numComments + 1
+            # for my needs I only need date and content 
+            # I will add more details on request 
+
+
+        numPosts = numPosts + 1
 
 print(str(numPosts) + ' wordpress posts exported')
+print(str(numComments) + ' wordpress comments exported')
